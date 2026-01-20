@@ -1,295 +1,173 @@
-document.addEventListener("DOMContentLoaded", function () {
-  // Calendar functionality
-  const calendarGrid = document.querySelector(".calendar-grid");
-  const selectedDateElement = document.getElementById("selected-date");
-  const prevMonthBtn = document.getElementById("prev-month");
-  const nextMonthBtn = document.getElementById("next-month");
+const calendar = document.querySelector(".calendar");
+const monthYear = document.getElementById("monthYear");
+const eventList = document.getElementById("eventList");
+const latestBookingDiv = document.getElementById("latestBooking");
+const message = document.getElementById("message");
+const selectedEventText = document.getElementById("selectedEvent");
+const selectedDateText = document.getElementById("selectedDate");
 
-  let currentDate = new Date(2025, 3, 1); // April 2025 (months are 0-indexed)
-  let selectedDate = new Date(2025, 3, 2); // April 2, 2025
+let currentDate = new Date();
+let selectedEvent = null;
+let selectedDate = null;
 
-  // Booked dates for demonstration
-  const bookedDates = [
-    "2025-04-05",
-    "2025-04-8",
-    "2025-04-23",
-    "025-04-30",
-    "2025-05-03",
-    "2025-05-12",
-    "2025-06-13",
-    "2025-07-12",
-    "2025-07-27",
-    "2025-09-24",
-    "2025-12-12",
-    "2026-02-12",
-    "2026-02-21",
-    "2026-04-23",
-    "2026-06-15",
-    "2026-10-20",
-  ];
+const events = [
+  { title: "AI Innovation Fair", type: "Expo", date: "2026-01-15", capacity: 2, booked: 2 },
+  { title: "Startup Expo", type: "Expo", date: "2026-02-10", capacity: 3, booked: 0 },
+  { title: "Cloud Conference", type: "Conference", date: "2026-04-23", capacity: 4, booked: 2 },
+  { title: "Web Dev Workshop", type: "Workshop", date: "2026-04-18", capacity: 2, booked: 2 },
+  { title: "Cyber Security Seminar", type: "Seminar", date: "2026-04-27", capacity: 6, booked: 1 }
+];
 
-  // Event dates for demonstration
-  const eventDates = [
-    { date: "2025-04-5", title: "Tech Talk", location: "Mumbai" },
-    { date: "2025-04-8", title: "Design Workshop", location: "Delhi" },
-    { date: "2025-04-23", title: "Startup Summit", location : "Bangaluru"},
-    { date: "2025-04-30", title: "Startup Expo", location: "Hyderabad" },
-    {date: "2025-05-03",title: "Health & Wellness Fair",location: "Chennai"},
-    { date: "2025-05-12", title: "Green Future Conference", location: "Pune" },
-    { date: "2025-06-13", title: "Design Thinking Workshop", location : "pune"},
-    { date: "2025-07-12", title: "Women in Tech Conference", location : "Chennai"},
-    { date: "2025-07-27", title: "Cybersecurity Meet", location :" Ahmedabad"},
-    { date: "2025-09-24", title : "Blockchain Bootcamp", location : "Kolkata"},
-    { date: "2025-12-12", title: "Data Science Hackaathon", location : "Jaipur"},
-    { date: "2026-02-12", title: "AI Innovation Fair", location : "Hydrabad"},
-    { date: "2026-02-21", title: "ED Tech Symposium",location : "Kochi"},
-    { date: "2026-04-23", title: "DevFest", location : "Delhi"},
-    { date: "2026-06-15", title: "Mobile App Hackathon", location : "Kochi"},
-    { date: "2026-10-20", title: "Robotics Expo", location : "Nagpur"},
-  ];
+function renderCalendar() {
+  calendar.querySelectorAll(".day").forEach(d => d.remove());
 
-  // Render calendar
-  function renderCalendar() {
-    // Clear previous calendar days (except headers)
-    while (calendarGrid.children.length > 7) {
-      calendarGrid.removeChild(calendarGrid.lastChild);
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
+  monthYear.textContent = currentDate.toLocaleString("default", {
+    month: "long",
+    year: "numeric"
+  });
+
+  const firstDay = new Date(year, month, 1).getDay();
+  const days = new Date(year, month + 1, 0).getDate();
+
+  for (let i = 0; i < firstDay; i++) {
+    calendar.appendChild(document.createElement("div"));
+  }
+
+  for (let d = 1; d <= days; d++) {
+    const fullDate = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+    const cell = document.createElement("div");
+    cell.textContent = d;
+    cell.className = "day available";
+
+    const dayEvents = events.filter(e => e.date === fullDate);
+    if (dayEvents.some(e => e.booked >= e.capacity)) {
+      cell.className = "day booked";
     }
 
-    function renderEventCards() {
-        const eventList = document.querySelector(".events-list");
-        eventList.innerHTML = "<h3>Upcoming Events</h3>";
-      
-        const today = new Date();
-        today.setHours(0, 0, 0, 0); // Normalize time
-      
-        const upcomingEvents = eventDates.filter((event) => {
-          const eventDate = new Date(event.date);
-          return eventDate >= today;
-        });
-      
-        if (upcomingEvents.length === 0) {
-          eventList.innerHTML += "<p>No upcoming events.</p>";
-          return;
-        }
-      
-        upcomingEvents.forEach((event) => {
-          const card = document.createElement("div");
-          card.className = "event-card";
-          card.innerHTML = `
-            <h3>${event.title}</h3>
-            <p>${new Date(event.date).toLocaleDateString()}, ${event.location}</p>
-            <button class="event-book-btn" data-date="${event.date}">Book Now</button>
-          `;
-          eventList.appendChild(card);
-        });
-      
-        // Book button event listeners
-        document.querySelectorAll(".event-book-btn").forEach((button) => {
-          button.addEventListener("click", function () {
-            const dateString = button.getAttribute("data-date");
-            const [year, month, day] = dateString.split("-");
-            selectedDate = new Date(year, month - 1, day);
-            selectedDateElement.textContent = dateString;
-            renderCalendar();
-          });
-        });
-      }      
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth();
-    const monthName = currentDate.toLocaleString("default", { month: "long" });
+    cell.onclick = () => {
+      document.querySelectorAll(".day").forEach(x => x.classList.remove("selected"));
+      cell.classList.add("selected");
 
-    document.querySelector("h2").textContent = `${monthName} ${year}`;
+      selectedDate = fullDate;
+      selectedDateText.textContent = fullDate;
+      selectedEvent = null;
+      selectedEventText.textContent = "None";
 
-    // Get first day of month and total days in month
-    const firstDay = new Date(year, month, 1).getDay();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
+      renderEventsByMonth();
+    };
 
-    // Add empty cells for days before the first day of the month
-    for (let i = 0; i < firstDay; i++) {
-      const emptyDay = document.createElement("div");
-      emptyDay.className = "calendar-day empty";
-      calendarGrid.appendChild(emptyDay);
-    }
+    calendar.appendChild(cell);
+  }
 
-    // Add cells for each day of the month
-    for (let day = 1; day <= daysInMonth; day++) {
-      const date = new Date(year, month, day);
-      const dateString = formatDate(date);
+  renderEventsByMonth();
+}
 
-      const dayElement = document.createElement("div");
-      dayElement.className = "calendar-day";
-      dayElement.textContent = day;
+function renderEventsByMonth() {
+  eventList.innerHTML = "";
 
-      // Check if date is booked
-      if (bookedDates.includes(dateString)) {
-        dayElement.classList.add("booked");
-        dayElement.title = "This date is already booked";
+  const y = currentDate.getFullYear();
+  const m = String(currentDate.getMonth() + 1).padStart(2, "0");
+
+  const monthEvents = events.filter(e => e.date.startsWith(`${y}-${m}`));
+
+  if (!monthEvents.length) {
+    eventList.innerHTML = "<p>No events this month</p>";
+    return;
+  }
+
+  monthEvents.forEach(e => {
+    const closed = e.booked >= e.capacity;
+    const div = document.createElement("div");
+    div.className = "event";
+
+    div.innerHTML = `
+      <strong>${e.title}</strong><br>
+      <small>${e.date} | ${e.type}</small><br>
+      <button class="${closed ? "closed" : "book-now"}">
+        ${closed ? "Booking Closed" : "Book Now"}
+      </button>
+    `;
+
+    div.querySelector("button").onclick = () => {
+      if (closed) {
+        showMessage(`Booking is closed for ${e.title}`, "error");
       } else {
-        dayElement.classList.add("available");
+        selectedEvent = e;
+        selectedEventText.textContent = `${e.title} (${e.date})`;
+        eventType.value = e.type;
       }
+    };
 
-      // Check if date has events
-      const hasEvent = eventDates.some((event) => event.date === dateString);
-      if (hasEvent) {
-        dayElement.classList.add("has-events");
-        const event = eventDates.find((event) => event.date === dateString);
-        dayElement.title = event.title;
-      }
+    eventList.appendChild(div);
+  });
+}
 
-      // Highlight selected date
-      if (dateString === formatDate(selectedDate)) {
-        dayElement.classList.add("selected");
-      }
+document.getElementById("bookingForm").onsubmit = e => {
+  e.preventDefault();
 
-      // Add click event
-      dayElement.addEventListener("click", function () {
-        if (!dayElement.classList.contains("empty")) {
-          selectedDate = date;
-          selectedDateElement.textContent = dateString;
-          renderCalendar(); // re-render calendar to highlight selected date
-      
-          const event = eventDates.find((event) => event.date === dateString);
-          const eventDetailsBox = document.getElementById("event-details");
-      
-          // Always show event details if available
-          if (event) {
-            document.getElementById("event-title").textContent = `Title: ${event.title}`;
-            document.getElementById("event-date").textContent = `Date: ${event.date}, Location: ${event.location}`;
-            eventDetailsBox.style.display = "block";
-          } else {
-            document.getElementById("event-title").textContent = "No events on this day.";
-            document.getElementById("event-date").textContent = "";
-            eventDetailsBox.style.display = "block";
-          }
-      
-          // Show form only for available (not booked) dates
-          const bookingForm = document.getElementById("booking-form");
-          const confirmationMessage = document.getElementById("confirmation-message");
-          if (dayElement.classList.contains("available")) {
-            bookingForm.style.display = "flex";
-          } else {
-            bookingForm.style.display = "none";
-            confirmationMessage.style.display = "none";
-          }
-        }
-      });      
-      calendarGrid.appendChild(dayElement);
-    }
-    renderEventCards();
+  if (!selectedDate) {
+    showMessage("Please select a date from the calendar", "error");
+    return;
   }
 
-  // Format date as YYYY-MM-DD
-  function formatDate(date) {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
+  if (!selectedEvent) {
+    showMessage("Please select an event to book", "error");
+    return;
   }
 
-  // Navigation buttons
-  prevMonthBtn.addEventListener("click", function () {
-    currentDate.setMonth(currentDate.getMonth() - 1);
-    renderCalendar();
-  });
+  selectedEvent.booked++;
 
-  nextMonthBtn.addEventListener("click", function () {
-    currentDate.setMonth(currentDate.getMonth() + 1);
-    renderCalendar();
-  });
+  const booking = {
+    name: name.value,
+    email: email.value,
+    phone: phone.value,
+    attendees: attendees.value,
+    eventType: eventType.value,
+    title: selectedEvent.title,
+    date: selectedEvent.date
+  };
 
-  // Event book buttons
-  document.querySelectorAll(".event-book-btn").forEach((button) => {
-    button.addEventListener("click", function () {
-      const dateString = button.getAttribute("data-date");
-      const [year, month, day] = dateString.split("-");
-      selectedDate = new Date(year, month - 1, day);
-      selectedDateElement.textContent = dateString;
-      renderCalendar();
-    });
-  });
+  localStorage.setItem("latestBooking", JSON.stringify(booking));
+  renderLatestBooking(booking);
 
-  // Form validation
-  const bookingForm = document.getElementById("booking-form");
-  const confirmationMessage = document.getElementById("confirmation-message");
+  showMessage("Booking Confirmed 🎉", "success");
+  e.target.reset();
 
-  bookingForm.addEventListener("submit", function (e) {
-    e.preventDefault();
-
-    let isValid = true;
-
-    // Validate name
-    const name = document.getElementById("name");
-    const nameError = document.getElementById("name-error");
-    if (!name.value.trim()) {
-      nameError.style.display = "block";
-      isValid = false;
-    } else {
-      nameError.style.display = "none";
-    }
-
-    // Validate email
-    const email = document.getElementById("email");
-    const emailError = document.getElementById("email-error");
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!email.value.trim()) {
-      emailError.textContent = "Email is required";
-      emailError.style.display = "block";
-      isValid = false;
-    } else if (!emailRegex.test(email.value)) {
-      emailError.textContent = "Please enter a valid email";
-      emailError.style.display = "block";
-      isValid = false;
-    } else {
-      emailError.style.display = "none";
-    }
-
-    // Validate phone
-    const phone = document.getElementById("phone");
-    const phoneError = document.getElementById("phone-error");
-    if (!phone.value.trim()) {
-      phoneError.textContent = "Contact number is required";
-      phoneError.style.display = "block";
-      isValid = false;
-    } else {
-      phoneError.style.display = "none";
-    }
-
-    // Validate attendees
-    const attendees = document.getElementById("attendees");
-    const attendeesError = document.getElementById("attendees-error");
-    if (!attendees.value || parseInt(attendees.value) < 1) {
-      attendeesError.textContent = "Please enter a valid number of attendees";
-      attendeesError.style.display = "block";
-      isValid = false;
-    } else {
-      attendeesError.style.display = "none";
-    }
-
-    // Validate event type
-    const eventType = document.getElementById("event-type");
-    const eventTypeError = document.getElementById("event-type-error");
-    if (!eventType.value) {
-      eventTypeError.textContent = "Please select an event type";
-      eventTypeError.style.display = "block";
-      isValid = false;
-    } else {
-      eventTypeError.style.display = "none";
-    }
-
-    // If form is valid, show confirmation
-    if (isValid) {
-      bookingForm.style.display = "none";
-      confirmationMessage.style.display = "block";
-
-      // Reset form after 3 seconds (for demo purposes)
-      setTimeout(() => {
-        bookingForm.reset();
-        bookingForm.style.display = "flex";
-        confirmationMessage.style.display = "none";
-      }, 3000);
-    }
-  });
-
-  // Initial render
+  selectedEventText.textContent = "None";
   renderCalendar();
-});
+};
+
+function renderLatestBooking(b) {
+  latestBookingDiv.innerHTML = `
+    <div>
+      <strong>${b.title}</strong><br>
+      Date: ${b.date} | ${b.eventType}<br>
+      ${b.name} (${b.email})<br>
+      Phone: ${b.phone} | Attendees: ${b.attendees}
+    </div>
+  `;
+}
+
+function showMessage(text, type) {
+  message.textContent = text;
+  message.className = `message ${type}`;
+  message.style.display = "block";
+  setTimeout(() => message.style.display = "none", 3000);
+}
+
+document.getElementById("prev").onclick = () => {
+  currentDate.setMonth(currentDate.getMonth() - 1);
+  renderCalendar();
+};
+
+document.getElementById("next").onclick = () => {
+  currentDate.setMonth(currentDate.getMonth() + 1);
+  renderCalendar();
+};
+
+const savedBooking = JSON.parse(localStorage.getItem("latestBooking"));
+if (savedBooking) renderLatestBooking(savedBooking);
+
+renderCalendar();
